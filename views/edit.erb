@@ -1,0 +1,6 @@
+<h2>Edit <%= @timer[:name] %>:</h2>
+<form method="post" action="/create_timer">
+  <input type="text" name="name" id="name" placeholder="Timer name" value=<%= @timer[:name] || "" %>>
+  <textarea name="description" id="description" rows="5" cols="100" placeholder="Describe the purpose of your timer..."><%= @timer[:name] %></textarea>
+  <button type="submit">Save Changes</button>
+</form>

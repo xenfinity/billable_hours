@@ -1,0 +1,22 @@
+
+<header>
+  <h1>Billable Hours</h1>
+</header>
+
+<h2>Active Timers</h2>
+<% if @active_timers.empty? %>
+  <i>no timers have been started</i>
+<% else %>
+
+<% end %>
+
+<h2>Completed Timers</h2>
+<% if @completed_timers.empty? %>
+  <i>no timers have been completed</i>
+<% else %>
+
+<% end %>
+
+<br></br>
+<a href="/new">New Timer</a>
+

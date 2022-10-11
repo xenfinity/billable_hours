@@ -1,0 +1,6 @@
+<h2>Upload a file:</h2>
+<p>valid extensions: <%= EXTENSIONS.join(', ') %></p>
+<form method="post" action="/upload" enctype="multipart/form-data">
+  <input type="file" id="file" name="file">
+  <input type="submit" value="Upload">
+</form>
