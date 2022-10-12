@@ -4,17 +4,29 @@
 </header>
 
 <h2>Active Timers</h2>
-<% if @active_timers.empty? %>
-  <i>no timers have been started</i>
+<% if active_timers.empty? %>
+  <i>no timers are currently active</i>
 <% else %>
-
+  <ul>
+  <% active_timers.each do |timer| %>
+    <li>
+      <a href="/timers/<%= timer[:id] %>"><%= timer[:name] %></a> - <%= elapsed_time(timer) %><i><%= timer[:paused_time] ? " - paused" : "" %></i>
+    </li>
+  <% end %>
+  </ul>
 <% end %>
 
 <h2>Completed Timers</h2>
-<% if @completed_timers.empty? %>
+<% if completed_timers.empty? %>
   <i>no timers have been completed</i>
 <% else %>
-
+  <ul>
+  <% completed_timers.each do |timer| %>
+    <li>
+      <a href="/timers/<%= timer[:id] %>"><%= timer[:name] %></a> - <%= total_time(timer) %>
+    </li>
+  <% end %>
+  </ul>
 <% end %>
 
 <br></br>

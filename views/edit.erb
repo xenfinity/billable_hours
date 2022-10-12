@@ -1,6 +1,13 @@
 <h2>Edit <%= @timer[:name] %>:</h2>
-<form method="post" action="/create_timer">
-  <input type="text" name="name" id="name" placeholder="Timer name" value=<%= @timer[:name] || "" %>>
-  <textarea name="description" id="description" rows="5" cols="100" placeholder="Describe the purpose of your timer..."><%= @timer[:name] %></textarea>
+<form method="post" action="/timers/<%= @timer[:id] %>/edit">
+<label for="name">Name:</label>
+  <input type="text" name="name" id="name" placeholder="Timer name" value="<%= @timer[:name]%>">
+  <br></br>
+  <div>  
+    <label for="description">Description:</label>
+  </div>
+  <div>
+    <textarea name="description" id="description" rows="5" cols="100" placeholder="Describe the purpose of your timer..."><%= @timer[:description] %></textarea>
+  </div>
   <button type="submit">Save Changes</button>
 </form>

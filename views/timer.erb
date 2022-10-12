@@ -1,0 +1,21 @@
+<a href="/">All Timers</a>
+<h2><%= @timer[:name] %></h2>
+<h3><%= total_time(@timer) || elapsed_time(@timer) %><i><%= @timer[:paused_time] ? " - paused" : "" %></i></h3>
+
+<p><%= @timer[:description] %></p>
+<% unless @timer[:completed_time] %>
+  <form class="inline" method="post" action="/timers/<%= @timer[:id] %>/complete">
+    <button class="link-button" type="submit" name="complete" value="true">Stop</button>
+  </form>
+  <% if @timer[:paused_time] %>
+  <form class="inline" method="post" action="/timers/<%= @timer[:id] %>/resume">
+    <button class="link-button" type="submit" name="resume" value="true">Resume</button>
+  </form>
+  <% else %>
+    <form class="inline" method="post" action="/timers/<%= @timer[:id] %>/pause">
+      <button class="link-button" type="submit" name="pause" value="true">Pause</button>
+    </form>
+  <% end %>
+<% end %>
+
+<a href="/timers/<%= @timer[:id] %>/edit">Edit</a>
