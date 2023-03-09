@@ -3,9 +3,12 @@ require "sinatra/reloader" if development?
 require "sinatra/content_for"
 require "tilt/erubis"
 require "redcarpet"
-require "securerandom"
-require_relative "format_duration"
 
+require_relative "format_duration"
+require_relative "session_persistence"
+require_relative "database_persistence"
+
+DATABASE = false
 
 configure do
   enable :sessions
@@ -13,59 +16,51 @@ configure do
   set :font_family, 'sans-serif'
   set :erb, :escape_html => true
 end
+def initiate_persistence(session, logger)
+  @storage = if DATABASE
+               DatabasePersistence.new(logger)
+             else
+               SessionPersistence.new(session)
+             end
+end
+
+def close_database
+  @storage.close_database
+end
 
 helpers do
-  def elapsed_time(timer)
-    start_time = timer[:start_time]
-    current_time = Time.now.to_time.to_i
-    paused = timer[:paused_duration] + calculate_pause(timer)
-
-    time = (start_time - current_time).abs - paused
-    format_duration(time)
-  end
-
-  def total_time(timer)
-    return false unless timer[:completed_time]
-    
-    start_time = timer[:start_time]
-    completed_time = timer[:completed_time]
-    paused = timer[:paused_duration]
-
-    time = (start_time - completed_time).abs - paused
-    format_duration(time)
-  end
-
+  
   def active_timers
-    session[:timers].select do |timer|
+    @storage.timers.select do |timer|
       timer[:completed_time].nil?
     end
   end
 
   def completed_timers
-    session[:timers].select do |timer|
+    @storage.timers.select do |timer|
       timer[:completed_time]
     end
+  end
+
+  def elapsed_time(timer_id)
+    elapsed_time = @storage.elapsed_time(timer_id)
+    format_duration(elapsed_time)
+  end
+
+  def total_time(timer_id)
+    return false unless @storage.timer_from_id(timer_id)[:completed_time]
+    
+    time = @storage.total_time(timer_id)
+    format_duration(time)
   end
 end
 
 before do
-  unless session[:timers] 
-    session[:timers] = []
-  end
+  initiate_persistence(session, logger)
 end
 
-def generate_id
-  SecureRandom.uuid
-end
-
-def timer_from_id(id)
-  session[:timers].find { |list| list[:id] == id }
-end
-
-def calculate_pause(timer)
-  return 0 unless timer[:paused_time]
-  current_time = Time.now.to_time.to_i
-  (current_time - timer[:paused_time]).abs
+after do
+  close_database if DATABASE
 end
 
 def valid_input?(text)
@@ -81,17 +76,16 @@ get '/new' do
 end
 
 get '/timers/:id' do
-  unless timer_from_id(params[:id])
+  unless @storage.timer_from_id(params[:id])
     session[:error] = "Timer doesn't exist"
     redirect '/'
   end
 
-  @timer = timer_from_id(params[:id])
+  @timer = @storage.timer_from_id(params[:id])
   erb :timer, layout: :layout
 end
 
 post '/create_timer' do
-  start_time = Time.now.to_time.to_i
   name = params[:name].strip
   description = params[:description]
 
@@ -99,44 +93,41 @@ post '/create_timer' do
     session[:error] = "Name cannot be blank"
     redirect '/new'
   end
-  timer = { id: generate_id, name: name, description: description, start_time: start_time, paused_duration: 0}
-
-  session[:timers]  << timer
+  @storage.create_timer(name, description)
   redirect '/'
 end
 
 get '/timers/:id/edit' do
-  @timer = timer_from_id(params[:id])
+  @timer = @storage.timer_from_id(params[:id])
   erb :edit, layout: :layout
 end
 
 post '/timers/:id/edit' do
-  @timer = timer_from_id(params[:id])
-  @timer[:name] = params[:name].strip
-  @timer[:description] = params[:description]
-
-  redirect "/timers/#{@timer[:id]}"
+  timer_id = params[:id]
+  name = params[:name].strip
+  description = params[:description].strip
+  @storage.edit_timer(timer_id, name, description)
+  
+  redirect "/timers/#{timer_id}"
 end
 
 post '/timers/:id/complete' do
-  @timer = timer_from_id(params[:id])
-  @timer[:paused_duration] += calculate_pause(@timer)
-  @timer[:completed_time] = Time.now.to_time.to_i
+  timer_id = params[:id]
+  @storage.complete_timer(timer_id)
 
   redirect '/'
 end
 
 post '/timers/:id/pause' do
-  @timer = timer_from_id(params[:id])
-  @timer[:paused_time] = Time.now.to_time.to_i
-
-  redirect "/timers/#{@timer[:id]}"
+  timer_id = params[:id]
+  @storage.pause_timer(timer_id)
+  
+  redirect "/timers/#{timer_id}"
 end
 
 post '/timers/:id/resume' do
-  @timer = timer_from_id(params[:id])
-  @timer[:paused_duration] += calculate_pause(@timer)
-  @timer[:paused_time] = nil
+  timer_id = params[:id]
+  @storage.resume_timer(timer_id)
 
-  redirect "/timers/#{@timer[:id]}"
+  redirect "/timers/#{timer_id}"
 end

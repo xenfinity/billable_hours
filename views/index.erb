@@ -10,7 +10,7 @@
   <ul>
   <% active_timers.each do |timer| %>
     <li>
-      <a href="/timers/<%= timer[:id] %>"><%= timer[:name] %></a> - <%= elapsed_time(timer) %><i><%= timer[:paused_time] ? " - paused" : "" %></i>
+      <a href="/timers/<%= timer[:id] %>"><%= timer[:name] %></a> - <%= elapsed_time(timer[:id]) %><i><%= timer[:paused_time] ? " - paused" : "" %></i>
     </li>
   <% end %>
   </ul>
@@ -23,7 +23,7 @@
   <ul>
   <% completed_timers.each do |timer| %>
     <li>
-      <a href="/timers/<%= timer[:id] %>"><%= timer[:name] %></a> - <%= total_time(timer) %>
+      <a href="/timers/<%= timer[:id] %>"><%= timer[:name] %></a> - <%= total_time(timer[:id]) %>
     </li>
   <% end %>
   </ul>
