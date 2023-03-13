@@ -3,12 +3,14 @@ require "sinatra/reloader" if development?
 require "sinatra/content_for"
 require "tilt/erubis"
 require "redcarpet"
+require "securerandom"
 
-require_relative "format_duration"
+
+require_relative "time_calculation"
 require_relative "session_persistence"
 require_relative "database_persistence"
 
-DATABASE = false
+DATABASE = true
 
 configure do
   enable :sessions
@@ -16,6 +18,7 @@ configure do
   set :font_family, 'sans-serif'
   set :erb, :escape_html => true
 end
+
 def initiate_persistence(session, logger)
   @storage = if DATABASE
                DatabasePersistence.new(logger)
@@ -24,8 +27,8 @@ def initiate_persistence(session, logger)
              end
 end
 
-def close_database
-  @storage.close_database
+def close_database_connection
+  @storage.close_connection
 end
 
 helpers do
@@ -37,22 +40,29 @@ helpers do
   end
 
   def completed_timers
+    p "timers #{@storage.timers}"
     @storage.timers.select do |timer|
       timer[:completed_time]
     end
   end
 
   def elapsed_time(timer_id)
-    elapsed_time = @storage.elapsed_time(timer_id)
+    timer = @storage.timer_from_id(timer_id)
+    elapsed_time = calculate_elapsed(timer)
     format_duration(elapsed_time)
   end
 
-  def total_time(timer_id)
+  def completed_time(timer_id)
     return false unless @storage.timer_from_id(timer_id)[:completed_time]
-    
-    time = @storage.total_time(timer_id)
-    format_duration(time)
+    timer = @storage.timer_from_id(timer_id)
+    completed_time = calculate_completed(timer)
+    format_duration(completed_time)
   end
+
+end
+
+def valid_input?(text)
+  !text.empty?
 end
 
 before do
@@ -60,11 +70,7 @@ before do
 end
 
 after do
-  close_database if DATABASE
-end
-
-def valid_input?(text)
-  !text.empty?
+  close_database_connection if DATABASE
 end
 
 get '/' do
@@ -88,12 +94,13 @@ end
 post '/create_timer' do
   name = params[:name].strip
   description = params[:description]
+  start_time = Time.now.to_time.to_i
 
   unless valid_input?(name) 
     session[:error] = "Name cannot be blank"
     redirect '/new'
   end
-  @storage.create_timer(name, description)
+  @storage.create_timer(name, description, start_time)
   redirect '/'
 end
 
@@ -113,14 +120,16 @@ end
 
 post '/timers/:id/complete' do
   timer_id = params[:id]
-  @storage.complete_timer(timer_id)
+  completed_time = Time.now.to_time.to_i
+  @storage.complete_timer(timer_id, completed_time)
 
   redirect '/'
 end
 
 post '/timers/:id/pause' do
   timer_id = params[:id]
-  @storage.pause_timer(timer_id)
+  paused_time = Time.now.to_time.to_i
+  @storage.pause_timer(timer_id, paused_time)
   
   redirect "/timers/#{timer_id}"
 end
@@ -131,3 +140,4 @@ post '/timers/:id/resume' do
 
   redirect "/timers/#{timer_id}"
 end
+  

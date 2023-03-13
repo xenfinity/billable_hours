@@ -14,15 +14,14 @@ class SessionPersistence
     @session[:timers].find { |list| list[:id] == id }
   end
 
-  def create_timer(name, description)
-    start_time = Time.now.to_time.to_i
+  def create_timer(name, description, start_time)
     timer = { id: generate_id, name: name, description: description, start_time: start_time, paused_duration: 0}
     @session[:timers] << timer
   end
 
-  def pause_timer(timer_id)
+  def pause_timer(timer_id, paused_time)
     timer = timer_from_id(timer_id)
-    timer[:paused_time] = Time.now.to_time.to_i
+    timer[:paused_time] = paused_time
   end
 
   def resume_timer(timer_id)
@@ -31,10 +30,10 @@ class SessionPersistence
     timer[:paused_time] = nil
   end
 
-  def complete_timer(timer_id)
+  def complete_timer(timer_id, completed_time)
     timer = timer_from_id(timer_id)
     timer[:paused_duration] += calculate_pause(timer)
-    timer[:completed_time] = Time.now.to_time.to_i
+    timer[:completed_time] = completed_time
   end
 
   def edit_timer(timer_id, name, description)
@@ -52,7 +51,7 @@ class SessionPersistence
     (start_time - current_time).abs - paused
   end
 
-  def total_time(timer_id)
+  def completed_time(timer_id)
     timer = timer_from_id(timer_id)
     start_time = timer[:start_time]
     completed_time = timer[:completed_time]

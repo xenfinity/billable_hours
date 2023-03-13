@@ -23,7 +23,7 @@
   <ul>
   <% completed_timers.each do |timer| %>
     <li>
-      <a href="/timers/<%= timer[:id] %>"><%= timer[:name] %></a> - <%= total_time(timer[:id]) %>
+      <a href="/timers/<%= timer[:id] %>"><%= timer[:name] %></a> - <%= completed_time(timer[:id]) %>
     </li>
   <% end %>
   </ul>

@@ -1,6 +1,6 @@
 <a href="/">All Timers</a>
 <h2><%= @timer[:name] %></h2>
-<h3><%= total_time(@timer[:id]) || elapsed_time(@timer[:id]) %><i><%= @timer[:paused_time] ? " - paused" : "" %></i></h3>
+<h3><%= completed_time(@timer[:id]) || elapsed_time(@timer[:id]) %><i><%= @timer[:paused_time] ? " - paused" : "" %></i></h3>
 
 <p><%= @timer[:description] %></p>
 <% unless @timer[:completed_time] %>
